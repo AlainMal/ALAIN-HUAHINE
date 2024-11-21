@@ -21,4 +21,4 @@ Maintenant il fallait que je capte le bus CAN en temps réel, je n'ai pas trouv�
 
 Enfin je suis arrivé à faire fonctionner tous ce bazard, il à fallut que je programme la connexion à l'Arduino depuis mon Excel en VBA, j'ai heureusement trouvé trouver le programme qui lit les octets grace à "ModComm" dont j'ai oublié le nom du site qui utilise les API de Windows, ça n'a pas été facile même pour moi qui connait bien les réseaux indutriels car je recevez des octets en vrac mais que j'avais mis en forme dans l'Arduino avec cette représentation :
 " .Identificateur;NombreOctets:octet,octet,octet  .... ,octet? "
-Je ne m'éternise pas plus pour l'instant vous pouvez voir mon proggareme dans le module "Communication.bas"
+Je ne m'éternise pas plus pour l'instant vous pouvez voir mon programme dans le module "Communication.bas"
