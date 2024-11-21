@@ -8,7 +8,7 @@ J'ai commencer par m'intessé au réaseau NMEA 2000 et j'ai appris le bus CAN av
  J'ai commencé avex le décodage du PGN puis aux octets, un simple Case OF pour les PGN que j'avais grace à l'USB CAN et son logiciel USB CAN V7.0 et V8.0 que j'ai à moitié décodé en regardant les octets reçus, j'ai compris tous les PGN qui sont sur mon bateau qui dispose de :
  - Vents apparent et réel
  - Vitesses SOG et surface
- - Position Latitud et Longitude
+ - Position Latitude et Longitude
  - Tensions et courants des batteries de service et démarage moteur
  - Profondeur
  - Températures cabine et moteur
