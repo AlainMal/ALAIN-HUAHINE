@@ -201,7 +201,7 @@ Worksheets(FEUIL_EXEMPLE).Unprotect
         pi = Application.WorksheetFunction.pi() 'Valeur de pi
         
 'dure environ 35 secondes pour 8 trames envoyé 500 fois
-'For i = 1 To 1
+For i = 1 To 100
 Analyse (",3,43,71,FF,FF,FF?;8:81,FF,7F,FF,7F,FF,7F,FF?.95FD0810;8:0,0,2,C1,70,FF,FF,FF?.89FD0203;8:CC,3E,1,E8,19,FA,FF,FF?.95FD0810;8:0,0,3,43,71,FF,FF,FF?.89FD0203;8:9,8,7,6,5,4,3,1?")
 'Esai avec  130306 et 130012
 'Analyse ("fe?8.AD9")  'Ca fonctionne
@@ -213,7 +213,7 @@ Analyse ("8:0,0,2,7D,73,FF,FF,FF?.09fd0203;8:a7,7c,01,fc,a4,fa,F0,F1?.15fd")
 
 'Analyse ("fe8AD9")  'Ca fonctionne
 'Analyse ("ppiu")  'N'importe quoi, ça fonctionne
-'Next i
+Next i
 Worksheets(FEUIL_EXEMPLE).Protect
 Close #1
 End Sub
