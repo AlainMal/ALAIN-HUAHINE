@@ -1,7 +1,7 @@
                                  Application bus CAN et NMEA 2000 sous Excel
  
 Il s'agit d'un application sous Excel qui gére les trames NMEA 2000
-J'ai commencer par m'intessé au réaseau NMEA 2000 et j'ai appris le bus CAN avec son Identificateur, son d'ombre d'octets et les fameux 8 octets
+J'ai commencer par m'intessé au réaseau NMEA 2000 et j'ai appris le bus CAN avec son Identificateur, son nombre d'octets et les fameux 8 octets
  qui donne les valeurs.
  Donc je me suis mis à réaliser un fichier Excel sans le VBA qui analyse l'identificateur avec l'aide des PGN venant de CSS Electronics puis aux octets dont je me suis aidé avec le site [https://canboat.github.io/](https://canboat.github.io/canboat/canboat.html) mais c'était un peu lourd, je me suis rendu à l'évidence qu'il fallait de je programme en VBA.
  
