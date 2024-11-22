@@ -1,16 +1,12 @@
 Attribute VB_Name = "Communication"
 Option Explicit
 
-
-
 '***************************************************************
-'Programme de réception des données arrivant du bus CAN
-'  Il fonctionne bien à condition d'avoir le port COM disponible,
-' c'est un port venant de l'USB qui pour l'instant fonctionne
 '
-'Il y a des trames qui passe inarperçu ... A VOIR
+' Programme de réception des données arrivant du bus CAN
+' Il fonctionne bien c'est un port venant de l'USB qui pour l'instant fonctionne
+'
 '***************************************************************
-
 Sub Temps_Reel()
 
 Dim o As Long, c As Long, r As Long  'Variables pour Ouvrir, Fermer et Lire
@@ -62,118 +58,97 @@ Debug.Print "c-> " & c
 End Sub
 
 '----------------- Analyse les trammes reçus ---------------
-'Analyse Total_Recu qui comportes plusieurs octets et plusieurs trames
-'La structrue des trames CAN: .ID;Long:Data,data,data,data ... fini par "?"
+'Analyse Total_Recu qui peut comporter plusieurs octets et plusieurs trames
+'La structrue des trames CAN émisent du l'Arduino
+'           .ID;Long:Data,data,data,data ... fini par "?"
+'           sur le dernier octet il n'y a pas de ","
 '-----------------------------------------------------------
 Sub Analyse(Total_Recu As String)
 
 Dim c As Long                   'pour fermer le port
-Dim Pointeur As Long          'Pointeur du buffer sortant vers PGN_DecodeA(Trame As String)
-Dim N_Buffer As Long         'Compte le nombre chaines misent dans le buffer en entrée
-Dim N_Buffer_Sortie As Long  'Compte le nombre chaine sortant
+Dim Pointeur As Long            'Pointeur du buffer sortant vers PGN_DecodeA(Trame As String)
+Dim N_Buffer As Long            'Compte le nombre chaines misent dans le buffer en entrée
 Dim Buffer(20000) As String     'Chaines contenants tous les carcatères reçu
-Dim Premier_Debut_Trame As Long      'Pointe sur le début d'une trame (.)
 Dim Debut_Trame As Integer      'Debut de la trame
-Dim Partie_Gauche As String     'Récupère la partie gauche de la trame
+Dim Partie_Gauche As String     'Récupère la partie gauche de la trame, on n'en a pas besoin
 Dim Partie_Droite As String     'Récupère la partie droite de la trame
-Dim Fin_Trame As Integer   'Longueur de la trame complète
-Dim Ancienne_Longueur As Integer    'Mémorise la valeur de Longueur_Trame
-Dim Debut As Long            'Pointe sur le début des recherches
-Dim i As Long                'incrément le nombre de tour, passé une certaine valeur, arrête le programme
-Dim ii As Long              'Compte le nombre de passage dans cette fonction
-Dim Nombre_Car As Long       'Nombre de caractère à mémorisé pour les trames suivantes
-Dim Total_Tous As String        'Récupère le concaténation du reste de l'ancienne trame avec la nouvelle
-Dim Attend_Point As String  'Cumule les octets reçu jusqu'a il y est un début de trame
-Dim Actuelle_Longueur As Long      'Longueur de la trame avant d'être mis dans la buffer
-Dim Point_Origine As Long       'Ce point de déplace sur la trame et donne la nouvelle origine
+Dim Fin_Trame As Integer        'Longueur de la trame complète
+Dim Longueur_Trame As Integer   'Mémorise la valeur de Longueur_Trame
+Dim Chaine_Total_Tous As String 'Récupère le concaténation du reste de l'ancienne trame avec la nouvelle
+Dim Chaine_Attente As String    'Cumule les octets reçu jusqu'a il y est un début de trame
+Dim Pointeur_Trame As Long      'Ce point de déplace sur la trame
+Dim i As Long                   'incrément le nombre de tour, passé une certaine valeur, arrête le programme
 
 ' a faire en Static car elle contient la fin d'une trame, à cumulé avec la nouvelle
-Static Buffer_Partie As String 'on ne l'initialse pas car elle est écrite plus loin
+Static Buffer_Restant As String 'on ne l'initialse pas car elle est écrite plus loin
 
 'Initialise les valeurs
-Debut = 0       'Commence par le début
-Pointeur = 0    'Initialyse le pointeur pour les sorties des trames
-i = 0           'Initialise le compteur de boucles
-Fin_Trame = 0
-Ancienne_Longueur = 0
-Point_Origine = 0
+Pointeur = 0        'Initialyse le pointeur pour les sorties des trames
+Fin_Trame = 0       'Initialyse la fin de la trame
+Longueur_Trame = 0  'Initialyse la logueur de la trame
+Pointeur_Trame = 0  'Initialyse le pointeur de la trame reçu
+i = 0               'Initialise le compteur de boucles
 
-'Laisse la main au système pour éviter qu'il ne reponde plus
-'If ii Mod 10 Then DoEvents     'Qd ul ne répond plus ça vient du nbr d'octets qui n'est pas assez grand dans la fonction au dessus "Temps_Reel"
-ii = ii + 1
     '------------------------------------------
     'Attend qu'il y ait un "." (Début de trame)
     '------------------------------------------
-        'Cumule Attend_Point avec Total_Recu, les nouveaux octets
-        Attend_Point = Attend_Point & Total_Recu
+        'Cumule Chaine_Attente avec Total_Recu, attend les nouveaux octets.
+        Chaine_Attente = Chaine_Attente & Total_Recu
         
-        'On cherche le début par un "."
-        'Premier_Debut_Trame = InStr(Debut + Ancienne_Longueur, Attend_Point, ".")
-        Premier_Debut_Trame = InStr(Ancienne_Longueur + 1, Attend_Point, ".")
+        'On commence à cherche le début par un "."
+        Debut_Trame = InStr(Longueur_Trame + 1, Chaine_Attente, ".")
         
-        'Tant qu'on a pas de point on attends les autres octets
-        If Premier_Debut_Trame = 0 Then
+        'Tant qu'on a pas de point on attends les autres octets.
+        If Debut_Trame = 0 Then
             Exit Sub
         End If
         
-        'On a trouvé un début de trame et on analyse tous
-        Total_Tous = Buffer_Partie & Attend_Point
-
+        'On a trouvé un début de trame et on analyse tous.
+        Chaine_Total_Tous = Buffer_Restant & Chaine_Attente
     
-    'La partie gauche n'a pas d'intéret car on contatène
-    'la partie de la trame restante avec les nouvelles
-    'ce qui réalise au final des trames entières
-    'Partie_Gauche = Left(Total_Tous, Premier_Debut_Trame)
-    
-    'La partie droite commence par un ".", ce qu'on vient de trouvé
-    If Len(Total_Tous) > Len(Partie_Droite) Then
-        Partie_Droite = Total_Tous
+    'La partie droite commence par un ".", ce qu'on vient de trouvé.
+    'La partie gauche n'est pas utile car c'est le début de la transmission.
+    If Len(Chaine_Total_Tous) > Len(Partie_Droite) Then
+        Partie_Droite = Chaine_Total_Tous
     Else
-        Partie_Droite = Right(Total_Tous, Len(Total_Tous) - Premier_Debut_Trame + 1)
+        Partie_Droite = Right(Chaine_Total_Tous, Len(Chaine_Total_Tous) - Debut_Trame + 1)
     End If
-    'On commence
-    'Buffer_Partie = Partie_Droite
-    'Buffer_Partie = Right(Partie_Droite, Len(Partie_Droite) - Premier_Debut_Trame)
-    'If Len(Buffer_Partie) > 1000 Then MsgBox ">1000"
     
-    'On tourne en permance, jusqu'a trouvé une fin de trame, on sort de la boucle si on n'a pas trouvé de fin de trame
+    'On tourne en permance, jusqu'a avoir trouvé une fin de trame, on sort de la boucle si on n'a pas trouvé de fin de trame.
     Do While True
-        
+    
+        ' Cherche la fin de la trame et trouve le nombre d'octets jusqu'a la fin de la trame ("?").
+        Fin_Trame = InStr(Fin_Trame + 1, Partie_Droite, "?")
             
-            ' Cherche la fin de la trame et trouve le nombre d'octets jusqu'a la fin de la trame, un "?"
-            Fin_Trame = InStr(Fin_Trame + 1, Partie_Droite, "?")
+        'Tant qu'on n'a pas trouvé on attends les octets suivants.
+        'il s'agit de la fin des octets reçus qui vont se trouver dans Buffer_Restant
+        If Fin_Trame = 0 Then
+            Exit Do
+        End If
             
-            If Fin_Trame = 0 Then
-                Exit Do
-            End If
+        'Longueur de la nouvelle trame
+        Longueur_Trame = Fin_Trame - Pointeur_Trame
             
-            'Longueur de la nouvelle trame
-            Actuelle_Longueur = Fin_Trame - Point_Origine
+        'On sort tant qu'on a pas de fin de trame "?", on attend la autres octets
+        If Fin_Trame - Pointeur_Trame = 0 Then Exit Do
             
-            'On sort tant qu'on a pas de fin de trame "?", on attend la autres octets
-            If Fin_Trame - Point_Origine = 0 Then Exit Do
-            
-            'Si  on trouve la fin de trame, on la met dans le buffer
-            If Fin_Trame - Point_Origine > 0 Then
-                'La trame bus CAN compléte se trouve sur la gauche du buffer sur la longueur de la trame
-                Buffer(N_Buffer) = Mid(Partie_Droite, Point_Origine + 1, Actuelle_Longueur)
-                N_Buffer = N_Buffer + 1
-                Debut = Debut + Ancienne_Longueur
+        'Si  on trouve la fin de trame, on la met dans le buffer
+        If Fin_Trame - Pointeur_Trame > 0 Then
+            'La trame bus CAN compléte se trouve dans la partie droite
+            Buffer(N_Buffer) = Mid(Partie_Droite, Pointeur_Trame + 1, Longueur_Trame)
+            N_Buffer = N_Buffer + 1
                 
-                'Le restant sur trouve dans ce qu'il reste des octets reçus sur la partie droite
-                Buffer_Partie = Right(Partie_Droite, Len(Partie_Droite) - Fin_Trame)
-                
-                'On mémorise la longueur de la trame entière
-                Ancienne_Longueur = Fin_Trame - Point_Origine
-                
-                'On trouve le nouveau point d'origine
-                Point_Origine = Point_Origine + Actuelle_Longueur
+            'Le restant sur trouve dans ce qu'il reste des octets reçus sur la partie droite
+            Buffer_Restant = Right(Partie_Droite, Len(Partie_Droite) - Fin_Trame)
+                               
+            'On trouve le nouveau point d'origine
+            Pointeur_Trame = Pointeur_Trame + Longueur_Trame
 
-                If Buffer_Partie = "" Then Exit Do
-            Else
-                'On laisse tomber car c'est un début, on laisse tomber la partie gauche
-                'Si on ne trouve pas la fin de la trame on va à la suite.. Voir ci dessus "if Fin_Trame = 0 Then Exit Do"
-            End If
+            If Buffer_Restant = "" Then Exit Do
+        Else
+            'On laisse tomber car c'est un début, on laisse tomber la partie gauche
+            'Si on ne trouve pas la fin de la trame on va à la suite.. Voir ci dessus "if Fin_Trame = 0 Then Exit Do"
+        End If
             
         'Contrôle s'il y a un problème (Ex. pas de ".") 'Cest falcutatif
         i = i + 1
@@ -184,32 +159,24 @@ ii = ii + 1
             MsgBox "Il y a trop de trames" & vbCr & "Ou les trames sont incorrects" & vbCr & vbCr & "Nous avons fermé le port" & vbCr & Buffer(N_Buffer - 1), vbCritical, "COMMUNICATION"
             Exit Sub
         End If
-            
+        
     Loop
              
-'On a fini la trame et on mémorise dans Buffer_Partie ce qu'il reste
-
-'Nombre de caractère de la partie reçu jusqu'au "."
-Nombre_Car = Len(Buffer_Partie)
-
-'Le buffer_partie se cumule tant qu'on a pas de trame compléte ou si ce n'est pas le début d'une transmission.
-'If Nombre_Car > 0 Then
-'    Buffer_Partie = Buffer_Partie & Right(Partie_Droite, Nombre_Car)
-'End If
+'On a fini la trame et on mémorise dans Buffer_Restant ce qu'il reste
 
 'Envoi les trames recu vers PGN_Decode(Trame As String) dans l'ordre ou elles sont arrivées
 Do While Pointeur < N_Buffer
 
-'Verifie la coherence de la trame, normalement ce n'est pas obligatoire mais j'ai eu quelques problèmes.
-If InStr(1, Buffer(Pointeur), ".") = 1 And InStr(2, Buffer(Pointeur), ".") = 0 Then
-    'on enregistre
-    If User_Form_COM.CheckBox1 Then
-        Print #1, Buffer(Pointeur)
-    End If
+    'Verifie la coherence de la trame, normalement ce n'est pas obligatoire mais j'ai eu quelques problèmes.
+    If InStr(1, Buffer(Pointeur), ".") = 1 And InStr(2, Buffer(Pointeur), ".") = 0 Then
+        'on enregistre
+        'If User_Form_COM.CheckBox1 Then
+            Print #1, Buffer(Pointeur)
+        'End If
     
-    'On décode
-    PGN_DecodeA (Buffer(Pointeur))
-End If
+        'On décode
+        PGN_DecodeA (Buffer(Pointeur))
+    End If
     
 'On incrémente le pointeur
 Pointeur = Pointeur + 1
@@ -234,20 +201,20 @@ Worksheets(FEUIL_EXEMPLE).Unprotect
         'initiale la valeur de Pi
         pi = Application.WorksheetFunction.pi() 'Valeur de pi
         
-'dure environ 35 secondes pour 8 trames envoyé 500 fois
-'For i = 1 To 1
+'dure environ 1 secondes pour 8 trames envoyé 500 fois
+For i = 1 To 500
 Analyse (",3,43,71,FF,FF,FF?;8:81,FF,7F,FF,7F,FF,7F,FF?.95FD0810;8:0,0,2,C1,70,FF,FF,FF?.89FD0203;8:CC,3E,1,E8,19,FA,FF,FF?.95FD0810;8:0,0,3,43,71,FF,FF,FF?.89FD0203;8:9,8,7,6,5,4,3,1?")
 'Esai avec  130306 et 130012
-'Analyse ("fe?8.AD9")  'Ca fonctionne
-'Analyse ("ppiu.")  'N'importe quoi, ça fonctionne bien, il a fallu controlé sur erreur le PGN dans cIDa.Pgn(ID as String)
+Analyse ("fe?8.AD9")  'Ca fonctionne
+Analyse ("ppiu.")  'N'importe quoi, ça fonctionne bien, il a fallu controlé sur erreur le PGN dans cIDa.Pgn(ID as String)
 
 Analyse (".15fd0810;8:0,6,7,8,9,FF,FF,FF?.15fd0810;8:0,0,2,7D,1,2,3,4?.15fd0810;")
 Analyse ("7:10,7D,6,7,8,9?.15fd0819;")
 Analyse ("8:0,0,2,7D,73,FF,FF,FF?.09fd0203;8:a7,7c,01,fc,a4,fa,F0,F1?.15fd")
 
-'Analyse ("fe8AD9")  'Ca fonctionne
-'Analyse ("ppiu")  'N'importe quoi, ça fonctionne
-'Next i
+Analyse ("fe8AD9")  'Ca fonctionne
+Analyse ("ppiu")  'N'importe quoi, ça fonctionne
+Next i
 Worksheets(FEUIL_EXEMPLE).Protect
 Close #1
 End Sub
