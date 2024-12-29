@@ -13,7 +13,7 @@ J'ai commencer par m'intessé au réaseau NMEA 2000 et j'ai appris le bus CAN av
  - Températures cabine et moteur (130312, 130316, 130310)
  - Niveaux d'eau douce et de gasoil (127505) 
  - Pilote automatique (127245)
- - AIS (129038, 129794, 129029, 128809, 129810)
+ - AIS et MMSI (129038, 129794, 129029, 128809, 129810)
 Il y a d'autres PGN que j'ai décodé mais qui sont moins intêressent pour mon usage.
 
 Maintenant il fallait que je capte le bus CAN en temps réel, je n'ai pas trouvé l'ideal et donc je me suis intéressé à l'Arduino qui est un appareil pour apprendre la programmation et qui fonctionne avec un micro-contôleur à 16Mhz et de mémoire restrainte de 250Kctets, j'ai acheter un MCP2515 à 8Mhz, tous ce matériel fonctionne à moitier avec des des morceaux de câbles dont je ne suis pas sûr qu'il font réellement contact.
